@@ -8,19 +8,20 @@ env:
   global:
     - IMAGE="$DOCKER_USER/ruby-openssl-docker"
 before_install:
-  - test $DOCKER_USER != ""
   - sudo apt-get -qq update
   # https://github.com/travis-ci/travis-ci/issues/4596
   - echo "${TRAVIS_COMMIT_RANGE} -> ${TRAVIS_COMMIT_RANGE/.../..}"
   - TRAVIS_COMMIT_RANGE="${TRAVIS_COMMIT_RANGE/.../..}"
   - |
-    files=$(git diff --name-only "${TRAVIS_COMMIT_RANGE}") || true
-    for file in ${files}; do
-      if [[ "${file}" =~ ^(tool/ruby-openssl-docker/|Dockerfile) ]]; then
-        BUILD_RUBY_OPENSSL_DOCKER=true
-        break
-      fi
-    done
+    if [ "${DOCKER_USER}" != "" -a "${DOCKER_PASSWORD}" != "" ]; then
+      files=$(git diff --name-only "${TRAVIS_COMMIT_RANGE}") || true
+      for file in ${files}; do
+        if [[ "${file}" =~ ^(tool/ruby-openssl-docker/|Dockerfile) ]]; then
+          BUILD_RUBY_OPENSSL_DOCKER=true
+          break
+        fi
+      done
+    fi
   - echo "DOCKER_USER=${DOCKER_USER=} BUILD_RUBY_OPENSSL_DOCKER=${BUILD_RUBY_OPENSSL_DOCKER=}"
 install:
   - sudo sh -c "curl -L https://github.com/docker/compose/releases/download/1.8.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose"
@@ -31,6 +32,7 @@ script:
   - |
     if [ "${BUILD_RUBY_OPENSSL_DOCKER}" = true ]; then
       docker pull $IMAGE:pr && \
+        sed -i "/^FROM/ s/zzak/${DOCKER_USER}/" Dockerfile && \
         sed -i '/^FROM/ s/testing/pr/' Dockerfile && \
         grep ^FROM Dockerfile
     fi
@@ -45,17 +47,13 @@ matrix:
   include:
     - name: bulid and push ruby-openssl-docker image for pull-request
       stage: prepare
-      # if: (type = pull_request) AND (branch = master) AND (fork = false)
-      if: (type = pull_request) AND (branch = master)
-      env:
-        - IMAGE="$DOCKER_USER/ruby-openssl-docker:pr"
-      before_script:
+      if: (env(DOCKER_USER) IS present) AND (env(DOCKER_PASSWORD) IS present) AND (type = pull_request) AND (branch = master)
       script:
         - |
           if [ "${BUILD_RUBY_OPENSSL_DOCKER}" = true ]; then
             pushd tool/ruby-openssl-docker && \
-              docker build --no-cache -t "$IMAGE:pr" . && \
-              echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin && \
+              docker build --no-cache -t $IMAGE:pr . && \
+              echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USER}" --password-stdin && \
               docker push $IMAGE:pr && \
               popd
           fi
@@ -87,13 +85,12 @@ matrix:
         - "rake test"
     - name: push ruby-openssl-docker image for testing
       stage: deploy
-      # if: (type = push) AND (branch = master) AND (fork = false)
-      if: (type = push) AND (branch = master)
+      if: (env(DOCKER_USER) IS present) AND (env(DOCKER_PASSWORD) IS present) AND (type = push) AND (branch = master)
       script:
         - |
           if [ "${BUILD_RUBY_OPENSSL_DOCKER}" = true ]; then
             docker pull $IMAGE:pr && \
-              echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin && \
+              echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USER}" --password-stdin && \
               docker tag $IMAGE:pr $IMAGE:testing && \
               docker push $IMAGE:testing
           fi
