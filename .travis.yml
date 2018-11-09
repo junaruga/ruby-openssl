@@ -45,7 +45,8 @@ matrix:
   include:
     - name: bulid and push ruby-openssl-docker image for pull-request
       stage: prepare
-      if: (type = pull_request) AND (branch = master) AND (fork = false)
+      # if: (type = pull_request) AND (branch = master) AND (fork = false)
+      if: (type = pull_request) AND (branch = master)
       env:
         - IMAGE="$DOCKER_USER/ruby-openssl-docker:pr"
       before_script:
@@ -86,7 +87,8 @@ matrix:
         - "rake test"
     - name: push ruby-openssl-docker image for testing
       stage: deploy
-      if: (type = push) AND (branch = master) AND (fork = false)
+      # if: (type = push) AND (branch = master) AND (fork = false)
+      if: (type = push) AND (branch = master)
       script:
         - |
           if [ "${BUILD_RUBY_OPENSSL_DOCKER}" = true ]; then
