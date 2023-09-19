@@ -24,6 +24,7 @@ Rake::TestTask.new(:test_fips) do |t|
     'test/openssl/test_fips.rb',
     'test/openssl/test_pkey.rb',
     'test/openssl/test_pkey_ec.rb',
+    'test/openssl/test_provider.rb',
   ]
   t.warning = true
 end
