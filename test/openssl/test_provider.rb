@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 require_relative 'utils'
-if defined?(OpenSSL) && defined?(OpenSSL::Provider) && !OpenSSL.fips_mode
+if defined?(OpenSSL) && defined?(OpenSSL::Provider)
 
 class OpenSSL::TestProvider < OpenSSL::TestCase
   def test_openssl_provider_name_inspect
@@ -13,13 +13,26 @@ class OpenSSL::TestProvider < OpenSSL::TestCase
 
   def test_openssl_provider_names
     with_openssl <<-'end;'
+      num = OpenSSL::Provider.provider_names.size
+
       legacy_provider = OpenSSL::Provider.load("legacy")
-      assert_equal(2, OpenSSL::Provider.provider_names.size)
+      assert_equal(num + 1, OpenSSL::Provider.provider_names.size)
       assert_includes(OpenSSL::Provider.provider_names, "legacy")
 
       assert_equal(true, legacy_provider.unload)
-      assert_equal(1, OpenSSL::Provider.provider_names.size)
+      assert_equal(num, OpenSSL::Provider.provider_names.size)
       assert_not_includes(OpenSSL::Provider.provider_names, "legacy")
+    end;
+  end
+
+  def test_openssl_provider_names_on_fips
+    omit "Only for FIPS mode environment" unless OpenSSL.fips_mode
+
+    # The number of providers is at least 2 in FIPS. They are the fips provider
+    # for the key management, and another provider for the encoding/decoding.
+    with_openssl(<<-'end;')
+      assert_compare(2, "<=", OpenSSL::Provider.provider_names.size)
+      assert_include(OpenSSL::Provider.provider_names, "fips")
     end;
   end
 
@@ -33,6 +46,9 @@ class OpenSSL::TestProvider < OpenSSL::TestCase
   end
 
   def test_openssl_legacy_provider
+    # The algorithm RC4 is not supported in FIPS.
+    omit "Only for non-FIPS mode environment" if OpenSSL.fips_mode
+
     with_openssl(<<-'end;')
       OpenSSL::Provider.load("legacy")
       algo = "RC4"

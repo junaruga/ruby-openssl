@@ -181,6 +181,6 @@ jobs:
       - name: test on fips module
         run:  |
           bundle exec rake debug &&
-            ruby -I./lib -ropenssl \
-            -e 'Dir.glob "./test/openssl/{test_fips.rb,test_pkey.rb}", &method(:require)'
+            ruby -I./lib -ropenssl -rtest-unit \
+            -e 'Dir.glob "./test/openssl/{test_fips.rb,test_pkey.rb,test_provider.rb}", &method(:require)'
         if: matrix.fips-enabled
