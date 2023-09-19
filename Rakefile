@@ -18,12 +18,22 @@ Rake::TestTask.new do |t|
   t.warning = true
 end
 
+Rake::TestTask.new(:test_fips) do |t|
+  t.libs << 'test/openssl'
+  t.test_files = FileList[
+    'test/openssl/test_fips.rb',
+    'test/openssl/test_pkey.rb',
+  ]
+  t.warning = true
+end
+
 RDoc::Task.new do |rdoc|
   rdoc.main = "README.md"
   rdoc.rdoc_files.include("*.md", "lib/**/*.rb", "ext/**/*.c")
 end
 
 task :test => [:compile, :debug]
+task :test_fips => [:compile, :debug]
 
 # Print Ruby and compiler info for debugging purpose.
 task :debug_compiler do
