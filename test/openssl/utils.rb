@@ -119,6 +119,18 @@ module OpenSSL::TestUtils
     return false unless version
     !major || (version.map(&:to_i) <=> [major, minor, fix]) >= 0
   end
+
+  def omit_on_fips
+    # The password based encryption used in the PEM format uses MD5 for
+    # deriving the encryption key from the password, and MD5 is not
+    # FIPS-approved.
+    #
+    # See https://github.com/openssl/openssl/discussions/21830#discussioncomment-6865636
+    # for details.
+    if OpenSSL.fips_mode
+      omit "The encryption used in the test is not approved in FIPS"
+    end
+  end
 end
 
 class OpenSSL::TestCase < Test::Unit::TestCase
