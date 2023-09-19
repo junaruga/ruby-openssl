@@ -82,6 +82,13 @@ class OpenSSL::TestPKey < OpenSSL::PKeyTestCase
   end
 
   def test_ed25519
+    # Ed25519 is not approved in OpenSSL 3.1+ FIPS code.
+    # See OpenSSL providers/fips/fipsprov.c PROV_NAMES_ED25519 entries
+    # with FIPS_UNAPPROVED_PROPERTIES in OpenSSL 3.1+.
+    if OpenSSL.fips_mode && openssl?(3, 1, 0, 0)
+      omit "Ed25519 is not approved in OpenSSL 3.1+ FIPS code"
+    end
+
     # Test vector from RFC 8032 Section 7.1 TEST 2
     priv_pem = <<~EOF
     -----BEGIN PRIVATE KEY-----
@@ -96,15 +103,11 @@ class OpenSSL::TestPKey < OpenSSL::PKeyTestCase
     begin
       priv = OpenSSL::PKey.read(priv_pem)
       pub = OpenSSL::PKey.read(pub_pem)
-    rescue OpenSSL::PKey::PKeyError
+    rescue OpenSSL::PKey::PKeyError => e
       # OpenSSL < 1.1.1
-      if !openssl?(1, 1, 1)
-        pend "Ed25519 is not implemented"
-      elsif OpenSSL.fips_mode && openssl?(3, 1, 0, 0)
-        # See OpenSSL providers/fips/fipsprov.c PROV_NAMES_ED25519 entries
-        # with FIPS_UNAPPROVED_PROPERTIES in OpenSSL 3.1+.
-        pend "Ed25519 is not approved in OpenSSL 3.1+ FIPS code"
-      end
+      pend "Ed25519 is not implemented" unless openssl?(1, 1, 1)
+
+      raise e
     end
     assert_instance_of OpenSSL::PKey::PKey, priv
     assert_instance_of OpenSSL::PKey::PKey, pub
@@ -143,6 +146,21 @@ class OpenSSL::TestPKey < OpenSSL::PKeyTestCase
 
     # Ed25519 pkey type does not support key derivation
     assert_raise(OpenSSL::PKey::PKeyError) { priv.derive(pub) }
+  end
+
+  def test_ed25519_not_supported_on_openssl_3_1_plus_fips
+    unless OpenSSL.fips_mode && openssl?(3, 1, 0, 0)
+      omit "Only for OpenSSL 3.1+ FIPS"
+    end
+
+    priv_pem = <<~EOF
+    -----BEGIN PRIVATE KEY-----
+    MC4CAQAwBQYDK2VwBCIEIEzNCJso/5banbbDRuwRTg9bijGfNaumJNqM9u1PuKb7
+    -----END PRIVATE KEY-----
+    EOF
+    assert_raise(OpenSSL::PKey::PKeyError) do
+      OpenSSL::PKey.read(priv_pem)
+    end
   end
 
   def test_x25519
