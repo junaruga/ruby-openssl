@@ -556,6 +556,29 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
                  ctx.options & OpenSSL::SSL::OP_NO_COMPRESSION
   end
 
+  def test_sslctx_set_params_no_min_version_on_greater_than_equal_openssl_11
+    omit 'Omit in OpenSSL 1.0 or eariler versions' unless openssl?(1, 1, 0)
+    omit 'Omit in LibreSSL' if libressl?
+
+    ctx = OpenSSL::SSL::SSLContext.new
+    ctx.set_params
+
+    # The cached value should not exist.
+    assert_raise(NoMethodError) { ctx.send(:@min_proto_version) }
+  end
+
+  def test_sslctx_set_params_min_version_on_less_than_openssl_11_or_libressl
+    if openssl?(1, 1, 0)
+      omit 'Omit in OpenSSL 1.1 or later versions'
+    end
+
+    ctx = OpenSSL::SSL::SSLContext.new
+    ctx.set_params
+
+    # This is not publicly exposed, but read the cached version.
+    assert_equal OpenSSL::SSL::TLS1_VERSION, ctx.send(:@min_proto_version)
+  end
+
   def test_post_connect_check_with_anon_ciphers
     ctx_proc = -> ctx {
       ctx.ssl_version = :TLSv1_2
