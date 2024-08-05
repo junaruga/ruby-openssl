@@ -100,7 +100,7 @@ jobs:
         if: matrix.openssl != 'openssl-master' && matrix.openssl != 'libressl-master'
 
       - name: Compile OpenSSL library
-        if: steps.cache-openssl.outputs.cache-hit != 'true'
+        # if: steps.cache-openssl.outputs.cache-hit != 'true'
         run: |
           # Enable Bash debugging option temporarily for debugging use.
           set -x
