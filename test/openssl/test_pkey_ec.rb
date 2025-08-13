@@ -72,8 +72,6 @@ class OpenSSL::TestEC < OpenSSL::PKeyTestCase
   end
 
   def test_check_key
-    omit_on_fips
-
     key0 = Fixtures.pkey("p256")
     assert_equal(true, key0.check_key)
     assert_equal(true, key0.private?)
