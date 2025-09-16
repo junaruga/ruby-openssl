@@ -10,6 +10,7 @@
  * (See the file 'COPYING'.)
  */
 #include "ossl.h"
+#include <openssl/trace.h>
 
 #ifndef OPENSSL_NO_SOCK
 #define numberof(ary) (int)(sizeof(ary)/sizeof((ary)[0]))
@@ -1906,9 +1907,24 @@ ossl_ssl_connect_nonblock(int argc, VALUE *argv, VALUE self)
 static VALUE
 ossl_ssl_accept(VALUE self)
 {
+    VALUE new_self;
+    BIO *trace_bio;
+    int trace_enabled;
+
     ossl_ssl_setup(self);
 
-    return ossl_start_ssl(self, SSL_accept, "SSL_accept", Qfalse);
+    /*
+    trace_bio = BIO_new_fp(stderr, BIO_NOCLOSE | BIO_FP_TEXT);
+    OSSL_trace_set_channel(OSSL_TRACE_CATEGORY_ALL, trace_bio);
+    OSSL_trace_set_prefix(OSSL_TRACE_CATEGORY_ALL, "BEGIN TRACE");
+    OSSL_trace_set_suffix(OSSL_TRACE_CATEGORY_ALL, "END TRACE");
+    trace_enabled = OSSL_trace_enabled(OSSL_TRACE_CATEGORY_ALL);
+    printf("[DEBUG] Trace enabled: %d\n", (trace_enabled) ? 1 : 0);
+    */
+
+    new_self = ossl_start_ssl(self, SSL_accept, "SSL_accept", Qfalse);
+
+    return new_self;
 }
 
 /*

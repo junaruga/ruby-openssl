@@ -694,6 +694,7 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
       ctx.security_level = 0
     }
 
+    # OpenSSL.debug = true
     start_server(ctx_proc: ctx_proc) { |port|
       ctx = OpenSSL::SSL::SSLContext.new
       ctx.max_version = OpenSSL::SSL::TLS1_2_VERSION
