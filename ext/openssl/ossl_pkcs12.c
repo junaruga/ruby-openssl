@@ -151,6 +151,13 @@ ossl_pkcs12_s_create(int argc, VALUE *argv, VALUE self)
                         nkey, ncert, kiter, miter, ktype);
     sk_X509_pop_free(x509s, X509_free);
     if(!p12) ossl_raise(ePKCS12Error, NULL);
+/*
+ * Clear an error printed in a valid case in OpenSSL 4.0.0.
+ * https://github.com/openssl/openssl/pull/30607
+ */
+#if OSSL_OPENSSL_PREREQ(4, 0, 0)
+    ossl_clear_error();
+#endif
     SetPKCS12(obj, p12);
 
     ossl_pkcs12_set_key(obj, pkey);
