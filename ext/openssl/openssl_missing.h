@@ -41,7 +41,9 @@ ASN1_BIT_STRING_set1(ASN1_BIT_STRING *bitstr, const uint8_t *data,
     bitstr->flags |= ASN1_STRING_FLAG_BITS_LEFT | unused_bits;
     return 1;
 }
+#endif
 
+#ifndef HAVE_ASN1_BIT_STRING_GET_LENGTH
 static inline int
 ASN1_BIT_STRING_get_length(const ASN1_BIT_STRING *bitstr, size_t *length,
                            int *unused_bits)
