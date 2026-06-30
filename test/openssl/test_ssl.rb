@@ -2097,6 +2097,18 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
     end
   end
 
+  def test_config
+    omit "SSL_CTX_config() not supported" unless
+      OpenSSL::SSL::SSLContext.method_defined?(:config)
+
+    ctx = OpenSSL::SSL::SSLContext.new
+    assert_raise(OpenSSL::SSL::SSLError) { ctx.config("bogus") }
+
+    ctx = OpenSSL::SSL::SSLContext.new
+    ctx.freeze
+    assert_raise(FrozenError) { ctx.config("bogus") }
+  end
+
   def test_pqc_sigalg
     # PQC algorithm ML-DSA (FIPS 204) is supported on OpenSSL 3.5 or later.
     return unless openssl?(3, 5, 0)

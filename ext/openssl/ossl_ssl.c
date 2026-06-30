@@ -1126,6 +1126,37 @@ ossl_sslctx_set_client_sigalgs(VALUE self, VALUE v)
 }
 #endif
 
+#ifdef HAVE_SSL_CTX_CONFIG
+/*
+ * call-seq:
+ *    ctx.config(name) -> self
+ *
+ * Applies the configuration section _name_ from the OpenSSL configuration file
+ * to _ctx_.
+ *
+ * Configuration sections can define protocol versions, cipher suites, and other
+ * SSL parameters. The configuration must be set up in the OpenSSL configuration
+ * file (see config(5) and SSL_CTX_config(3) for details).
+ *
+ * === Example
+ *   ctx = OpenSSL::SSL::SSLContext.new
+ *   ctx.config("server")
+ */
+static VALUE
+ossl_sslctx_config(VALUE self, VALUE name)
+{
+    SSL_CTX *ctx;
+
+    rb_check_frozen(self);
+    GetSSLCTX(self, ctx);
+
+    if (!SSL_CTX_config(ctx, StringValueCStr(name)))
+        ossl_raise(eSSLError, "SSL_CTX_config");
+
+    return self;
+}
+#endif
+
 #ifndef OPENSSL_NO_DH
 /*
  * call-seq:
@@ -3065,6 +3096,10 @@ Init_ossl_ssl(void)
     rb_define_method(cSSLContext, "enable_fallback_scsv", ossl_sslctx_enable_fallback_scsv, 0);
 #endif
     rb_define_method(cSSLContext, "add_certificate", ossl_sslctx_add_certificate, -1);
+
+#ifdef HAVE_SSL_CTX_CONFIG
+    rb_define_method(cSSLContext, "config", ossl_sslctx_config, 1);
+#endif
 
     rb_define_method(cSSLContext, "setup", ossl_sslctx_setup, 0);
     rb_define_alias(cSSLContext, "freeze", "setup");
