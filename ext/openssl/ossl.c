@@ -1012,6 +1012,115 @@ ossl_crypto_fixed_length_secure_compare(VALUE dummy, VALUE str1, VALUE str2)
  * If the server certificate is invalid or <tt>context.ca_file</tt> is not set
  * when verifying peers an OpenSSL::SSL::SSLError will be raised.
  *
+ * == Post-Quantum Cryptography
+ *
+ * Post-quantum cryptography (PQC) provides protection against attacks by
+ * quantum computers. Ruby OpenSSL supports PQC algorithms when the underlying
+ * OpenSSL library provides them (OpenSSL 3.5 or later).
+ *
+ * Two aspects of a TLS connection can use PQC algorithms:
+ *
+ * * <b>Key exchange</b> - ML-KEM (via SSLContext#groups=). The hybrid group
+ *   +X25519MLKEM768+ combines classical X25519 with ML-KEM-768.
+ * * <b>Authentication</b> - ML-DSA (via certificates and SSLContext#sigalgs=).
+ *   The algorithm name used in OpenSSL is +mldsa65+ (ML-DSA-65).
+ *
+ * === PQC Server and Client
+ *
+ * A server using an ML-DSA-65 certificate with hybrid key exchange:
+ *
+ *   server_cert = OpenSSL::X509::Certificate.new(File.read('server_cert.pem'))
+ *   server_key = OpenSSL::PKey.read(File.read('server_key.pem'))
+ *
+ *   server_ctx = OpenSSL::SSL::SSLContext.new
+ *   server_ctx.groups = 'X25519MLKEM768'
+ *   server_ctx.add_certificate(server_cert, server_key)
+ *   server_ctx.verify_mode = OpenSSL::SSL::VERIFY_PEER
+ *
+ *   tcp_server = TCPServer.new('127.0.0.1', 5000)
+ *   tcp_client = tcp_server.accept
+ *   ssl = OpenSSL::SSL::SSLSocket.new(tcp_client, server_ctx)
+ *   ssl.accept
+ *
+ *   ssl.group       #=> "X25519MLKEM768"
+ *   ssl.sigalg      #=> "mldsa65"
+ *   ssl.peer_sigalg #=> nil (client did not send a certificate)
+ *
+ * A client connecting to the server:
+ *
+ *   client_ctx = OpenSSL::SSL::SSLContext.new
+ *   client_ctx.ca_file = 'ca_cert.pem'
+ *   client_ctx.verify_mode = OpenSSL::SSL::VERIFY_PEER
+ *
+ *   tcp = TCPSocket.new('127.0.0.1', 5000)
+ *   ssl = OpenSSL::SSL::SSLSocket.new(tcp, client_ctx)
+ *   ssl.connect
+ *
+ *   ssl.group       #=> "X25519MLKEM768"
+ *   ssl.peer_sigalg #=> "mldsa65"
+ *
+ * === PQC Client Authentication
+ *
+ * For mutual TLS, the server requests the client's certificate and the client
+ * presents an ML-DSA-65 certificate:
+ *
+ *   # Server
+ *   server_ctx = OpenSSL::SSL::SSLContext.new
+ *   server_ctx.groups = 'X25519MLKEM768'
+ *   server_ctx.add_certificate(server_cert, server_key)
+ *   server_ctx.ca_file = 'ca_cert.pem'
+ *   server_ctx.client_ca = [OpenSSL::X509::Certificate.new(File.read('ca_cert.pem'))]
+ *   server_ctx.verify_mode = OpenSSL::SSL::VERIFY_PEER |
+ *     OpenSSL::SSL::VERIFY_FAIL_IF_NO_PEER_CERT
+ *
+ *   # Client
+ *   client_cert = OpenSSL::X509::Certificate.new(File.read('client_cert.pem'))
+ *   client_key = OpenSSL::PKey.read(File.read('client_key.pem'))
+ *
+ *   client_ctx = OpenSSL::SSL::SSLContext.new
+ *   client_ctx.add_certificate(client_cert, client_key)
+ *   client_ctx.ca_file = 'ca_cert.pem'
+ *   client_ctx.verify_mode = OpenSSL::SSL::VERIFY_PEER |
+ *     OpenSSL::SSL::VERIFY_FAIL_IF_NO_PEER_CERT
+ *
+ * After the handshake, both sides can inspect the peer's signature algorithm:
+ *
+ *   ssl.sigalg      #=> "mldsa65"
+ *   ssl.peer_sigalg #=> "mldsa65"
+ *
+ * === Multiple Certificates (PQC and Classical)
+ *
+ * A server can be configured with both ML-DSA-65 and RSA certificates so that
+ * it can serve both PQC-capable and classical clients. OpenSSL automatically
+ * selects the appropriate certificate based on the client's capabilities.
+ *
+ *   # Server with both ML-DSA-65 and RSA certificates
+ *   mldsa_cert = OpenSSL::X509::Certificate.new(File.read('mldsa_cert.pem'))
+ *   mldsa_key = OpenSSL::PKey.read(File.read('mldsa_key.pem'))
+ *   rsa_cert = OpenSSL::X509::Certificate.new(File.read('rsa_cert.pem'))
+ *   rsa_key = OpenSSL::PKey::RSA.new(File.read('rsa_key.pem'))
+ *
+ *   ctx = OpenSSL::SSL::SSLContext.new
+ *   ctx.groups = 'X25519MLKEM768'
+ *   ctx.add_certificate(mldsa_cert, mldsa_key)
+ *   ctx.add_certificate(rsa_cert, rsa_key)
+ *   ctx.sigalgs = 'mldsa65:rsa_pss_rsae_sha256'
+ *   ctx.verify_mode = OpenSSL::SSL::VERIFY_PEER
+ *
+ * A client can select the certificate type by setting the signature algorithms:
+ *
+ *   # Client requesting ML-DSA-65
+ *   ctx1 = OpenSSL::SSL::SSLContext.new
+ *   ctx1.sigalgs = 'mldsa65'
+ *   ctx1.ca_file = 'mldsa_ca_cert.pem'
+ *   ctx1.verify_mode = OpenSSL::SSL::VERIFY_PEER
+ *
+ *   # Client requesting RSA
+ *   ctx2 = OpenSSL::SSL::SSLContext.new
+ *   ctx2.sigalgs = 'rsa_pss_rsae_sha256'
+ *   ctx2.ca_file = 'rsa_ca_cert.pem'
+ *   ctx2.verify_mode = OpenSSL::SSL::VERIFY_PEER
+ *
  */
 void
 Init_openssl(void)

@@ -1121,6 +1121,15 @@ ossl_sslctx_set_ciphersuites(VALUE self, VALUE v)
  * appropriate one from it.
  *
  * See also #client_sigalgs= for the client authentication equivalent.
+ *
+ * === Example
+ *   ctx.sigalgs = "rsa_pss_rsae_sha256"
+ *
+ * Post-quantum signature algorithm +mldsa65+ (ML-DSA-65) can be specified
+ * alone or alongside classical algorithms:
+ *
+ *   ctx.sigalgs = "mldsa65"
+ *   ctx.sigalgs = "mldsa65:rsa_pss_rsae_sha256"
  */
 static VALUE
 ossl_sslctx_set_sigalgs(VALUE self, VALUE v)
@@ -1246,6 +1255,15 @@ ossl_sslctx_set_tmp_dh(VALUE self, VALUE arg)
  *
  *   p cli.tmp_key.group.curve_name
  *   # => "prime256v1" (is an alias for NIST P-256)
+ *
+ * === Post-Quantum Key Exchange
+ *
+ * +X25519MLKEM768+ is a hybrid group combining X25519 and ML-KEM-768 for
+ * post-quantum key exchange. It can be used alone or alongside classical
+ * groups:
+ *
+ *   ctx.groups = "X25519MLKEM768"
+ *   ctx.groups = "X25519MLKEM768:X25519:P-256"
  */
 static VALUE
 ossl_sslctx_set_groups(VALUE self, VALUE arg)
@@ -1365,6 +1383,10 @@ ossl_sslctx_enable_fallback_scsv(VALUE self)
  *   ecdsa_pkey = ...
  *   another_ca_cert = ...
  *   ctx.add_certificate(ecdsa_cert, ecdsa_pkey, [another_ca_cert])
+ *
+ *   mldsa_cert = OpenSSL::X509::Certificate.new(...)
+ *   mldsa_pkey = OpenSSL::PKey.read(...)
+ *   ctx.add_certificate(mldsa_cert, mldsa_pkey)
  */
 static VALUE
 ossl_sslctx_add_certificate(int argc, VALUE *argv, VALUE self)
@@ -2738,6 +2760,9 @@ ossl_ssl_tmp_key(VALUE self)
  *
  * Returns the signature algorithm name, the IANA name of the signature scheme
  * used by the local to sign the TLS handshake.
+ *
+ *   ssl.sigalg  #=> "rsa_pss_rsae_sha256"
+ *   ssl.sigalg  #=> "mldsa65"
  */
 static VALUE
 ossl_ssl_get_sigalg(VALUE self)
@@ -2757,6 +2782,9 @@ ossl_ssl_get_sigalg(VALUE self)
  *
  * Returns the signature algorithm name, the IANA name of the signature scheme
  * used by the peer to sign the TLS handshake.
+ *
+ *   ssl.peer_sigalg  #=> "rsa_pss_rsae_sha256"
+ *   ssl.peer_sigalg  #=> "mldsa65"
  */
 static VALUE
 ossl_ssl_get_peer_sigalg(VALUE self)
@@ -2778,6 +2806,9 @@ ossl_ssl_get_peer_sigalg(VALUE self)
  *
  * Returns the name of the group that was used for the key agreement of the
  * current TLS session establishment.
+ *
+ *   ssl.group  #=> "X25519"
+ *   ssl.group  #=> "X25519MLKEM768"
  */
 static VALUE
 ossl_ssl_get_group(VALUE self)
@@ -2839,6 +2870,10 @@ Init_ossl_ssl(void)
      * An SSLContext is used to set various options regarding certificates,
      * algorithms, verification, session caching, etc.  The SSLContext is
      * used to create an SSLSocket.
+     *
+     * Post-quantum algorithms such as ML-KEM (via #groups=) and ML-DSA
+     * (via #add_certificate and #sigalgs=) are supported when the underlying
+     * OpenSSL library provides them.
      *
      * All attributes must be set before creating an SSLSocket as the
      * SSLContext will be frozen afterward.
