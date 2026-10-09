@@ -1014,16 +1014,14 @@ ossl_crypto_fixed_length_secure_compare(VALUE dummy, VALUE str1, VALUE str2)
  *
  * == Post-Quantum Cryptography
  *
- * Post-quantum cryptography (PQC) provides protection against attacks by
- * quantum computers. Ruby OpenSSL supports PQC algorithms when the underlying
- * OpenSSL library provides them (OpenSSL 3.5 or later).
+ * Post-quantum cryptography (PQC) secures electronic information against
+ * attacks by quantum computers. PQC is available in OpenSSL >= 3.5.0.
  *
  * Two aspects of a TLS connection can use PQC algorithms:
  *
- * * <b>Key exchange</b> - ML-KEM (via SSLContext#groups=). The hybrid group
- *   +X25519MLKEM768+ combines classical X25519 with ML-KEM-768.
- * * <b>Authentication</b> - ML-DSA (via certificates and SSLContext#sigalgs=).
- *   The algorithm name used in OpenSSL is +mldsa65+ (ML-DSA-65).
+ * * <b>Key exchange</b> - ML-KEM (via SSLContext#groups=).
+ * * <b>Signatures</b> - ML-DSA or SLH-DSA (via certificates and
+ *   SSLContext#sigalgs=).
  *
  * === PQC Server and Client
  *
