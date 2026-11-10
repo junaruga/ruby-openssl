@@ -1012,7 +1012,7 @@ ossl_crypto_fixed_length_secure_compare(VALUE dummy, VALUE str1, VALUE str2)
  * If the server certificate is invalid or <tt>context.ca_file</tt> is not set
  * when verifying peers an OpenSSL::SSL::SSLError will be raised.
  *
- * == Post-Quantum Cryptography
+ * === Post-Quantum Cryptography
  *
  * Post-quantum cryptography (PQC) secures electronic information against
  * attacks by quantum computers. PQC is available in \OpenSSL >= 3.5.0.
@@ -1025,7 +1025,7 @@ ossl_crypto_fixed_length_secure_compare(VALUE dummy, VALUE str1, VALUE str2)
  *   OpenSSL::SSL::SSLContext#sigalgs= and getting via
  *   OpenSSL::SSL::SSLSocket#sigalg and OpenSSL::SSL::SSLSocket#peer_sigalg.
  *
- * === PQC Server and Client
+ * ==== PQC Server and Client
  *
  * A server using an ML-KEM key exchange and ML-DSA signature (X25519MLKEM768
  * is a hybrid algorithm (X25519 + ML-KEM-768), a variant of ML-KEM, ML-DSA-65
@@ -1041,8 +1041,6 @@ ossl_crypto_fixed_length_secure_compare(VALUE dummy, VALUE str1, VALUE str2)
  *   # Set the allowed TLS group with X25519MLKEM768
  *   context.groups = 'X25519MLKEM768'
  *   context.add_certificate(cert, key)
- *   # Set the allowed signature algorithms with ML-DSA-65
- *   context.sigalgs = 'mldsa65'
  *
  *   tcp_server = TCPServer.new('localhost', 5000)
  *
@@ -1078,7 +1076,7 @@ ossl_crypto_fixed_length_secure_compare(VALUE dummy, VALUE str1, VALUE str2)
  *   ssl_client.close
  *   tcp_socket.close
  *
- * === Multiple Certificates (PQC and Classical) Server and Clients
+ * ==== Multiple Certificates (PQC and Classical) Server and Clients
  *
  * A server can be configured with both ML-DSA (PQC) and RSA (classical)
  * certificates, with both ML-KEM (PQC) and X25519 (classical) key exchange
@@ -1100,8 +1098,6 @@ ossl_crypto_fixed_length_secure_compare(VALUE dummy, VALUE str1, VALUE str2)
  *   context.groups = 'X25519MLKEM768:X25519'
  *   context.add_certificate(mldsa_cert, mldsa_key)
  *   context.add_certificate(rsa_cert, rsa_key)
- *   # Set the allowed signature algorithms as ML-DSA-65 and RSA
- *   context.sigalgs = 'mldsa65:rsa_pss_rsae_sha256'
  *
  *   tcp_server = TCPServer.new('localhost', 5000)
  *
